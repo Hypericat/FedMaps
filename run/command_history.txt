@@ -1,0 +1,50 @@
+/help
+/settings
+/ac
+/mods
+/help
+/client
+/ac larp
+/fl
+/cc good boy
+/fm
+/fm test get
+/fm test set 1
+/fm test set fewfew
+/fm test set test
+/fm
+/fm test
+/fm test set 1
+/fm test get
+/fm test set 100
+/fm test get
+/fm test set
+/fm test
+/gsdd
+/fm test
+/fm test get
+/fm
+/fm test get
+/warp dh
+/cc im testing esp
+/warp dh
+/f7
+/warp dh
+/gc def not testing cheats dw
+/warp dh
+/warp h
+/warp dh
+/fm test get
+/cc lol
+/go
+/fl
+/warp dh
+/msg 3w1n im testing cheats rn
+/msg 3w1n not playing yet
+/r im in cheater vc
+/warp dh
+/r who are you I forogt
+/r no
+/r wait for unban
+/r like good boy
+/warp dh

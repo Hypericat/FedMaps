@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "fedmaps",
+  "version": "${version}",
+  "name": "FedMaps",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/fedmaps/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "me.hypericats.fedmaps.client.FedMapsClient"
+    ],
+    "main": [
+      "me.hypericats.fedmaps.FedMaps"
+    ]
+  },
+  "mixins": [
+    "ssid.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
