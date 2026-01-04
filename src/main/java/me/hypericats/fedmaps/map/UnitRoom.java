@@ -22,6 +22,7 @@ public class UnitRoom {
     private int nameHash;
     private int core = -1;
     private byte connections;
+    private byte specialDoors;
     private boolean isTopRightMost;
 
     private final Box2D box;
@@ -53,7 +54,7 @@ public class UnitRoom {
         return (MinecraftClient.getInstance().world != null) && MinecraftClient.getInstance().world.getChunkManager().isChunkLoaded(center.getX() >> 4, center.getZ() >> 4);
     }
 
-    public byte getConnections() {
+    public short getConnections() {
         return connections;
     }
 
@@ -88,31 +89,44 @@ public class UnitRoom {
     private boolean shouldHaveDoorConnection(int roomX, int roomY, Direction2D dir) {
         if (!isDoor(dir)) return false;
         UnitRoom room = getOffsetRoomFromIndexPos(roomX, roomY, dir);
-        if (room == null || !room.hasData() || !room.hasDoorConnection(dir.negate())) return true;
+        if (room == null || !room.hasData() || !room.hasDoorConnection(dir.negate())) {
+            checkSpecialDoors(dir);
+            return true;
+        }
 
         if (this.getData().type() == RoomType.NORMAL) return false;
         room.clearDoorStatus(dir.negate());
+        checkSpecialDoors(dir);
         return true;
+    }
+
+    private void checkSpecialDoors(Direction2D dir) {
+        if (isBlockDoorWither(dir)) {
+            specialDoors |= (byte) ((0b1) << (dir.toIndex()));
+            return;
+        }
+        if (isBlockDoorBlood(dir)) specialDoors |= (byte) ((0b1) << (dir.toIndex() + 4));
     }
 
     private void clearDoorStatus(Direction2D dir) {
         switch (dir) {
             case NORTH -> {
-                connections &= ~0b10000;
+                connections &= ~(byte)0b10000;
                 return;
             }
 
             case EAST -> {
-                connections &= ~0b100000;
+                connections &= ~(byte)0b100000;
                 return;
             }
 
             case SOUTH -> {
-                connections &= ~0b1000000;
-                return;            }
+                connections &= ~(byte)0b1000000;
+                return;
+            }
 
             case WEST -> {
-                connections &= ~((byte) 0b10000000);
+                connections &= ~((byte)0b10000000);
                 return;
             }
         }
@@ -169,6 +183,31 @@ public class UnitRoom {
         }
         return false;
     }
+
+    public boolean isDoorWither(Direction2D dir) {
+        return (specialDoors & (((byte)0b1) << (dir.toIndex()))) != 0;
+    }
+
+    public boolean isDoorBlood(Direction2D dir) {
+        return (specialDoors & (((byte)0b1) << (dir.toIndex() + 4))) != 0;
+    }
+
+    private boolean isBlockDoorWither(Direction2D dir) {
+        if (MinecraftClient.getInstance().world == null) return false;
+        BlockPos offset = dir.toBlockPos().multiply(haveRoomSize);
+        int x = center.getX() + offset.getX();
+        int z = center.getZ() + offset.getZ();
+        return MinecraftClient.getInstance().world.getBlockState(new BlockPos(x, 70, z)).getBlock() == Blocks.COAL_BLOCK;
+    }
+
+    private boolean isBlockDoorBlood(Direction2D dir) {
+        if (MinecraftClient.getInstance().world == null) return false;
+        BlockPos offset = dir.toBlockPos().multiply(haveRoomSize);
+        int x = center.getX() + offset.getX();
+        int z = center.getZ() + offset.getZ();
+        return MinecraftClient.getInstance().world.getBlockState(new BlockPos(x, 70, z)).getBlock() == Blocks.RED_CONCRETE;
+    }
+
 
     public boolean isDoor(Direction2D dir) {
         if (MinecraftClient.getInstance().world == null || !MinecraftClient.getInstance().world.getChunkManager().isChunkLoaded(center.getX() >> 4, center.getZ() >> 4)) return false;

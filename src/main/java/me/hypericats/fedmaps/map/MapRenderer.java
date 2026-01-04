@@ -55,13 +55,13 @@ public class MapRenderer {
                 int yOffset = ((int) (10.0f * mapY)) + scaledConnectorSize + scaledRoomSize * y + scaledConnectorSize * y;
 
                 if (room.hasDoorConnections()) {
-                    Arrays.stream(Direction2D.values()).forEach(d -> {
+                    for (Direction2D d : Direction2D.values()) {
                         if (room.hasDoorConnection(d)) {
                             MutableBox2D box2D = new MutableBox2D(new Point(xOffset + scaledRoomSize / 2, yOffset + scaledRoomSize / 2), scaledConnectorSize / 3 * 2, scaledConnectorSize / 3 * 2);
                             box2D.expandTowards(d, (scaledRoomSize + scaledConnectorSize) / 2);
-                            context.fill(box2D.minX, box2D.minY, box2D.maxX, box2D.maxY, getRoomColor(room));
+                            context.fill(box2D.minX, box2D.minY, box2D.maxX, box2D.maxY, room.isDoorWither(d) ? 0xFF000000 : getRoomColor(room));
                         }
-                    });
+                    }
                 }
             }
         }

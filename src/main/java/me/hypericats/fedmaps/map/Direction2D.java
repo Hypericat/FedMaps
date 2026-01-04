@@ -38,6 +38,27 @@ public enum Direction2D {
         return d != null &&  (d == this || d == this.negate());
     }
 
+    public int toIndex() {
+        switch (this) {
+            case NORTH -> {
+                return 0;
+            }
+
+            case EAST -> {
+                return 1;
+            }
+
+            case WEST -> {
+                return 2;
+            }
+
+            case SOUTH -> {
+                return 3;
+            }
+        }
+        return -1;
+    }
+
     public BlockPos toBlockPos() {
         switch (this) {
             case NORTH -> {
