@@ -29,7 +29,6 @@ public class FedMapsClient implements ClientModInitializer {
 
         WorldRenderEvents.END_MAIN.register(context -> {
             FeatureHandler.getByClass(Esp.class).onRenderWorld(context.matrices(), context.consumers(), MinecraftClient.getInstance().getRenderTickCounter().getTickProgress(false));
-            DungeonScan.onRenderLast(context.matrices(), context.consumers(), MinecraftClient.getInstance().getRenderTickCounter().getTickProgress(false));
         });
 
         HudRenderCallback.EVENT.register(MapRenderer::onRenderGui); // Deprecated ik but idc

@@ -96,6 +96,10 @@ public class DungeonScan {
     }
 
     public static void onClientTick() {
+        if (MinecraftClient.getInstance().inGameHud != null && currentRoom != null) {
+            MinecraftClient.getInstance().inGameHud.setTitle(Text.of(String.valueOf(currentRoom.getCore())));
+        }
+
         // dungeons check
         tick++;
         if ((tick & 0b111) != 0b111) return;

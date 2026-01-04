@@ -34,6 +34,10 @@ public enum Direction2D {
         return null;
     }
 
+    public boolean isSameAxis(Direction2D d) {
+        return d != null &&  (d == this || d == this.negate());
+    }
+
     public BlockPos toBlockPos() {
         switch (this) {
             case NORTH -> {

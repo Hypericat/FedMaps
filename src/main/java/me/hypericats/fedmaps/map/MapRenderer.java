@@ -9,7 +9,9 @@ import net.minecraft.util.Identifier;
 import org.joml.Matrix3x2fStack;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class MapRenderer {
     private static int mapX = 10;
@@ -17,7 +19,8 @@ public class MapRenderer {
 
     private static int borderWidth = 1;
     private static int markerSize = 5;
-    private static int textSize = 8;
+    private static int textSize = 4;
+    private static boolean showSecretCount = true;
 
     private static int bloodColor = 0xFFFF0000;
     private static int entranceColor = 0xFF148500;
@@ -74,17 +77,43 @@ public class MapRenderer {
                     context.fill(xOffset, yOffset, xOffset + scaledRoomSize, yOffset + scaledRoomSize, getRoomColor(room));
                 } else {
                     MutableBox2D renderBox = new MutableBox2D(xOffset, yOffset, xOffset + scaledRoomSize, yOffset + scaledRoomSize);
-                    Arrays.stream(Direction2D.values()).forEach(d -> {
-                        if (room.hasRoomConnection(d)) renderBox.expandTowards(d, scaledConnectorSize);
-                    });
+                    Direction2D expanded = null;
+                    MutableBox2D back = null;
+
+                    for (Direction2D d : Direction2D.values()) {
+                        if (room.hasRoomConnection(d)) {
+                            if (expanded == null || expanded.isSameAxis(d) || room.getData().cores().length > 3) { // cancer
+                                renderBox.expandTowards(d, scaledConnectorSize);
+                                expanded = d;
+                            } else {
+                                back = new MutableBox2D(xOffset, yOffset, xOffset + scaledRoomSize, yOffset + scaledRoomSize); // To deal with L room, ts is cancer
+                                back.expandTowards(d, scaledConnectorSize);
+                            }
+                        }
+                    }
+
                     context.fill(renderBox.minX, renderBox.minY, renderBox.maxX, renderBox.maxY, getRoomColor(room));
+                    if (back != null) context.fill(back.minX, back.minY, back.maxX, back.maxY, getRoomColor(room));
                 }
 
+                int scaledTextSize = (int) (textSize / 100.0f * getMapSize());
                 matrices.pushMatrix();
-                matrices.scale(textSize);
+                matrices.scale(scaledTextSize);
                 if (room.shouldDrawText()) {
-                    int textWidth = MinecraftClient.getInstance().textRenderer.getWidth(room.getData().name());
-                    context.drawText(MinecraftClient.getInstance().textRenderer, room.getData().name(), xOffset / textSize + scaledRoomSize / textSize - textWidth, yOffset / textSize + scaledRoomSize / textSize / 8, 0xFFFFFFFF, true);
+                    List<String> lines = new ArrayList<>(List.of(room.getData().name().split("[ -]")));
+                    if (showSecretCount && room.getData().secrets() > 0) lines.add(String.valueOf(room.getData().secrets()));
+                    if (lines.isEmpty()) continue;
+
+                    int spacing = 3;
+                    int height = (MinecraftClient.getInstance().textRenderer.fontHeight * lines.size() + spacing * (lines.size() - 1)) * scaledTextSize;
+                    int yCoord = yOffset + (scaledRoomSize - height) / 2;
+
+                    for (String s : lines) {
+                        int textWidth = MinecraftClient.getInstance().textRenderer.getWidth(s);
+                        context.drawText(MinecraftClient.getInstance().textRenderer, s, (xOffset + (scaledRoomSize - textWidth * scaledTextSize) / 2) / scaledTextSize, yCoord / scaledTextSize, 0xFFFFFFFF, true);
+                        yCoord += (MinecraftClient.getInstance().textRenderer.fontHeight + spacing) * scaledTextSize;
+
+                    }
                 }
                 matrices.popMatrix();
             }
