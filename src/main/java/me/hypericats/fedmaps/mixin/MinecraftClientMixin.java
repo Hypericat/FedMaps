@@ -2,6 +2,9 @@ package me.hypericats.fedmaps.mixin;
 
 import me.hypericats.fedmaps.feature.Esp;
 import me.hypericats.fedmaps.feature.FeatureHandler;
+import me.hypericats.fedmaps.map.DungeonScan;
+import me.hypericats.fedmaps.map.MapRenderer;
+import me.hypericats.fedmaps.map.RoomTypeHandler;
 import me.hypericats.fedmaps.screens.SSIDScreen;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.session.Session;
@@ -23,5 +26,11 @@ public class MinecraftClientMixin {
     private void onTickStart(CallbackInfo ci) {
         // Tick Start
         FeatureHandler.getByClass(Esp.class).onClientTick();
+        DungeonScan.onClientTick();
+    }
+
+    @Inject(at = @At("HEAD"), method = "run")
+    private void onRun(CallbackInfo ci) {
+        RoomTypeHandler.initCores();
     }
 }

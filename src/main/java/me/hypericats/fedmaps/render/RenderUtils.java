@@ -7,6 +7,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.RenderPipelines;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
@@ -81,7 +82,7 @@ public class RenderUtils {
         VertexConsumer buffer = vertices.getBuffer(POS_COL_QUADS_NO_DEPTH_TEST);
         MatrixStack.Entry entry = matrices.peek();
         Vec3d cameraPos = MinecraftClient.getInstance().gameRenderer.getCamera().getCameraPos();
-        Matrix4f matrix = entry.getPositionMatrix().translate((float) -cameraPos.x, (float) -cameraPos.y, (float) -cameraPos.z); // move this outside loop
+        Matrix4f matrix = entry.getPositionMatrix().translate((float) -cameraPos.x, (float) -cameraPos.y, (float) -cameraPos.z); // move outside loop
 
 
         buffer.vertex(matrix, (float) box.minX, (float) box.minY, (float) box.maxZ).color(red, green, blue, alpha);
@@ -121,7 +122,7 @@ public class RenderUtils {
         VertexConsumer consumer = vertices.getBuffer(LINES_NO_DEPTH_TEST.apply((double) thickness));
         MatrixStack.Entry entry = matrices.peek();
         Vec3d cameraPos = MinecraftClient.getInstance().gameRenderer.getCamera().getCameraPos();
-        Matrix4f matrix = entry.getPositionMatrix().translate((float) -cameraPos.x, (float) -cameraPos.y, (float) -cameraPos.z); // move this outside loop
+        Matrix4f matrix = entry.getPositionMatrix().translate((float) -cameraPos.x, (float) -cameraPos.y, (float) -cameraPos.z); // move outside loop
 
 
         consumer.vertex(matrix, (float) box.minX, (float) box.minY, (float) box.minZ).color(red, green, blue, alpha).normal(1.0f, 0.0f, 0.0f);
@@ -149,6 +150,13 @@ public class RenderUtils {
         consumer.vertex(matrix, (float) box.maxX, (float) box.maxY, (float) box.minZ).color(red, green, blue, alpha).normal(0.0f, 0.0f, 1.0f);
         consumer.vertex(matrix, (float) box.maxX, (float) box.maxY, (float) box.maxZ).color(red, green, blue, alpha).normal(0.0f, 0.0f, 1.0f);
         matrices.pop();
+    }
+
+    public static void drawOutlinedRectangle(DrawContext context, int x, int y, int width, int height, int color, int borderWidth) {
+        context.fill(x, y, x + width, y + borderWidth, color);
+        context.fill(x, y + height - borderWidth, x + width, y + height, color);
+        context.fill(x, y + borderWidth, x + borderWidth, y + height - borderWidth, color);
+        context.fill(x + width - borderWidth, y + borderWidth, x + width, y + height - borderWidth, color);
     }
 
     public static void drawLines(MatrixStack matrices, VertexConsumerProvider vertices, List<Vec3d> points, int color, float width, boolean depth) {

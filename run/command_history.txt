@@ -1,50 +1,50 @@
-/help
-/settings
-/ac
-/mods
-/help
-/client
-/ac larp
-/fl
-/cc good boy
-/fm
-/fm test get
-/fm test set 1
-/fm test set fewfew
-/fm test set test
-/fm
-/fm test
-/fm test set 1
-/fm test get
-/fm test set 100
-/fm test get
-/fm test set
-/fm test
-/gsdd
-/fm test
-/fm test get
-/fm
-/fm test get
+/warp banr
+/warp barn
+/warp park
+/ahs tuxedo
+/hub
+/warp park
+/ah
 /warp dh
-/cc im testing esp
+/p leave
+/warp hub
 /warp dh
-/f7
+/warp ddn
+/warp dn
 /warp dh
-/gc def not testing cheats dw
+/l
+/play sb
 /warp dh
-/warp h
+/cc im testing map
 /warp dh
-/fm test get
-/cc lol
-/go
+/cc provide chestplates
+/cc or bad at games ig
+/warp dh
+/cc we shall see
+/cc nope
+/warp dh
+/cc log in next time I log out
 /fl
 /warp dh
-/msg 3w1n im testing cheats rn
-/msg 3w1n not playing yet
-/r im in cheater vc
+/pl
+/p leave
+/cc who tf is vZiaad
 /warp dh
-/r who are you I forogt
-/r no
-/r wait for unban
-/r like good boy
+/fl
+/warp dh
+/hub
+/warp dh
+/fl
+/warp dh
+/gc yes?
+/gc yes
+/warp dh
+/warp d
+/warp dh
+/h
+/hub
+/pl
+/p leave
+/k
+/l
 /warp dh
