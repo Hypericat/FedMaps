@@ -302,6 +302,7 @@ public class UnitRoom {
         }
 
         core = sb.toString().hashCode();
+        if (core == -318865360) return -1; // Empty room core
         return core;
     }
 

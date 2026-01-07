@@ -31,8 +31,6 @@ public class RoomTypeHandler {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-        rooms.values().forEach(c -> System.out.println(c.type()));
     }
 
     public static RoomData getFromCore(int core) {

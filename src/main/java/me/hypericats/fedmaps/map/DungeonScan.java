@@ -14,7 +14,7 @@ import java.util.*;
 import java.util.List;
 
 public class DungeonScan {
-    private static final UnitRoom[] orderedRooms = new UnitRoom[121];
+    private static final UnitRoom[] orderedRooms = new UnitRoom[36];
     private static final HashMap<Long, UnitRoom> unitRooms = new HashMap<>();
     private static UnitRoom currentRoom = null;
     private static int tick = 0;
@@ -39,15 +39,15 @@ public class DungeonScan {
         unitRooms.clear();
         currentRoom = null;
 
-        for (int x = 0; x <= 10; x++) {
-            for (int z = 0; z <= 10; z++) {
+        for (int x = 0; x < 6; x++) {
+            for (int z = 0; z < 6; z++) {
                 int xPos = UnitRoom.startX + x * UnitRoom.roomSize;
                 int zPos = UnitRoom.startZ + z * UnitRoom.roomSize;
 
                 UnitRoom unit = new UnitRoom(new BlockPos(xPos, 70, zPos));
 
                 unitRooms.put(encodeIndex(x, z), unit);
-                orderedRooms[x * 11 + z] = unit;
+                orderedRooms[x * 6 + z] = unit;
                 boolean bl = unit.loadData(x, z);
             }
         }
@@ -60,7 +60,7 @@ public class DungeonScan {
     }
 
     public static UnitRoom getRoomFromOrderedIndex(int x, int y) {
-        return getRoomFromOrderedIndex(x * 11 + y);
+        return getRoomFromOrderedIndex(x * 6 + y);
     }
 
 
@@ -76,10 +76,6 @@ public class DungeonScan {
         if (MinecraftClient.getInstance().player == null) return null;
         BlockPos playerPos = MinecraftClient.getInstance().player.getBlockPos();
         return new Point(playerPos.getX() - UnitRoom.startX, playerPos.getZ() - UnitRoom.startZ);
-    }
-
-    public static Point getMapEndPosition() {
-        return new Point(UnitRoom.startX + 11 * UnitRoom.roomSize, 1);
     }
 
 
@@ -112,8 +108,8 @@ public class DungeonScan {
 
         for (int i = 0; i < orderedRooms.length; i++) {
 //            if (orderedRooms[i] == currentRoom) {
-//                int xPos = i / 11;
-//                int yPos = i % 11;
+//                int xPos = i / 5;
+//                int yPos = i % 5;
 //                if (currentRoom.hasData())
 //                    MinecraftClient.getInstance().player.sendMessage(Text.of("Current room : " + xPos + ", " + yPos + " -> " + currentRoom.getRoomData().name()), false);
 //                debug(xPos, yPos, Direction2D.NORTH);
@@ -122,7 +118,7 @@ public class DungeonScan {
 //                debug(xPos, yPos, Direction2D.WEST);
 //            }
             if (orderedRooms[i].hasData()) continue;
-            orderedRooms[i].loadData(i / 11, i % 11);
+            orderedRooms[i].loadData(i / 6, i % 6);
         }
     }
 

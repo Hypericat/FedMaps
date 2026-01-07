@@ -47,8 +47,8 @@ public class MapRenderer {
         int scaledRoomSize = (int) (13.16666667F / 10.0F * getMapSize()); // 6 rooms
 
         // Need to render first
-        for (int x = 0; x <= 10; x++) {
-            for (int y = 0; y <= 10; y++) {
+        for (int x = 0; x < 6; x++) {
+            for (int y = 0; y < 6; y++) {
                 UnitRoom room = DungeonScan.getRoomFromOrderedIndex(x, y);
                 if (!room.hasData()) continue;
                 int xOffset = ((int) (10.0f * mapX)) + scaledConnectorSize + scaledRoomSize * x + scaledConnectorSize * x;
@@ -66,8 +66,8 @@ public class MapRenderer {
             }
         }
 
-        for (int x = 0; x <= 10; x++) {
-            for (int y = 0; y <= 10; y++) {
+        for (int x = 0; x < 6; x++) {
+            for (int y = 0; y < 6; y++) {
                 UnitRoom room = DungeonScan.getRoomFromOrderedIndex(x, y);
                 if (!room.hasData()) continue;
                 int xOffset = ((int) (10.0f * mapX)) + scaledConnectorSize + scaledRoomSize * x + scaledConnectorSize * x;
