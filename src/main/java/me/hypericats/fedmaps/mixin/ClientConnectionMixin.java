@@ -4,6 +4,8 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import me.hypericats.fedmaps.feature.Esp;
 import me.hypericats.fedmaps.feature.FeatureHandler;
+import me.hypericats.fedmaps.map.DungeonScan;
+import me.hypericats.fedmaps.map.StateManager;
 import net.fabricmc.fabric.mixin.attachment.CustomPayloadC2SPacketAccessor;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.packet.BrandCustomPayload;
@@ -32,6 +34,8 @@ public class ClientConnectionMixin {
     @Inject(at = @At("HEAD"), method = "channelRead0(Lio/netty/channel/ChannelHandlerContext;Lnet/minecraft/network/packet/Packet;)V", cancellable = true)
     private void onReceivePacket(ChannelHandlerContext channelHandlerContext, Packet<?> packet, CallbackInfo ci) {
         FeatureHandler.getByClass(Esp.class).onReceivePacket(packet);
+        DungeonScan.onReceivePacket(packet);
+        StateManager.onReceivePacket(packet);
     }
 
 

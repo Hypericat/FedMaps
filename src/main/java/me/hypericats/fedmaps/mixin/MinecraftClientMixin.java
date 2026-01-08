@@ -5,6 +5,7 @@ import me.hypericats.fedmaps.feature.FeatureHandler;
 import me.hypericats.fedmaps.map.DungeonScan;
 import me.hypericats.fedmaps.map.MapRenderer;
 import me.hypericats.fedmaps.map.RoomTypeHandler;
+import me.hypericats.fedmaps.map.StateManager;
 import me.hypericats.fedmaps.screens.SSIDScreen;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.session.Session;

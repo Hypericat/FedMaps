@@ -1,5 +1,7 @@
 package me.hypericats.fedmaps.feature;
 
+import me.hypericats.fedmaps.map.Location;
+import me.hypericats.fedmaps.map.StateManager;
 import me.hypericats.fedmaps.render.RenderUtils;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -84,7 +86,7 @@ public class Esp extends Feature {
     }
 
     public void onRenderWorld(MatrixStack matrices, VertexConsumerProvider vertices, float partialTicks) {
-        if (!drawBoxes) return; // || !inDungeons
+        if (!drawBoxes || StateManager.getLocation() != Location.Dungeon) return; // || !inDungeons
 
         if (showStarredMobs && !starredMobs.isEmpty()) { // && !BossEventDispatcher.inBoss
             handleRender(matrices, vertices, new ArrayList<>(starredMobs), outlineColor, filledBoxColor, partialTicks, starredMobs.size() <= tracerCount);
@@ -142,6 +144,7 @@ public class Esp extends Feature {
         return true;
     }
     public void onReceivePacket(Packet<?> packet) {
+        if (StateManager.getLocation() != Location.Dungeon) return;
         //if (!DungeonUtils.inDungeons || BossEventDispatcher.inBoss) return;
 
         if (packet instanceof EntitiesDestroyS2CPacket) {
@@ -150,7 +153,7 @@ public class Esp extends Feature {
     }
 
     public void onClientTick() {
-        if (MinecraftClient.getInstance().world == null || MinecraftClient.getInstance().player == null) return;
+        if (MinecraftClient.getInstance().world == null || MinecraftClient.getInstance().player == null || StateManager.getLocation() != Location.Dungeon) return;
         tick++;
         if (tick % updateInterval != 0) return;
 

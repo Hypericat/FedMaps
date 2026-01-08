@@ -6,11 +6,11 @@ import me.hypericats.fedmaps.feature.Esp;
 import me.hypericats.fedmaps.feature.FeatureHandler;
 import me.hypericats.fedmaps.map.DungeonScan;
 import me.hypericats.fedmaps.map.MapRenderer;
+import me.hypericats.fedmaps.map.StateManager;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientWorldEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 
@@ -24,7 +24,8 @@ public class FedMapsClient implements ClientModInitializer {
 
         ClientWorldEvents.AFTER_CLIENT_WORLD_CHANGE.register((client, world) -> {
             FeatureHandler.getByClass(Esp.class).onWorldLoad();
-            DungeonScan.onWorldLoad(MinecraftClient.getInstance().world);
+            DungeonScan.onWordLoad();
+            StateManager.onWorldLoad(MinecraftClient.getInstance().world);
         });
 
         WorldRenderEvents.END_MAIN.register(context -> {

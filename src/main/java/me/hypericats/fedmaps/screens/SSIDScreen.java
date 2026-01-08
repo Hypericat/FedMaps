@@ -1,5 +1,7 @@
 package me.hypericats.fedmaps.screens;
 
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.stream.MalformedJsonException;
 import me.hypericats.fedmaps.API.SessionAPI;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -76,19 +78,33 @@ public class SSIDScreen extends Screen {
             feedBackColor = 0xFF8f0000;
             return;
         }
-        String[] info;
-        try {
-            info = SessionAPI.getProfileInfo(SSIDField.getText());
-        } catch (IOException e) {
-            feedBackMessage = "Failed to poll API for username and UUID!";
-            feedBackColor = 0xFF8f0000;
-            return;
-        } catch (Exception e) {
-            feedBackMessage = "Invalid SSID!";
-            e.printStackTrace();
-            feedBackColor = 0xFF8f0000;
-            return;
+        String[] info = null;
+
+        for (int i = 0; i < 10; i++) {
+            try {
+                info = SessionAPI.getProfileInfo(SSIDField.getText());
+                break;
+            } catch (MalformedJsonException | JsonSyntaxException json) {
+                feedBackMessage = "Ran out of retries, network error!";
+                feedBackColor = 0xFF8f0000;
+                System.err.println("Failed to parse json! Retries left : " + i);
+                continue;
+
+            } catch (IOException e) {
+                feedBackMessage = "Failed to poll API for username and UUID!";
+                feedBackColor = 0xFF8f0000;
+                return;
+
+            } catch (Exception e) {
+                feedBackMessage = "Invalid SSID!";
+                e.printStackTrace();
+                feedBackColor = 0xFF8f0000;
+                return;
+            }
         }
+
+        if (info == null) return;
+
         try {
             session = new Session(info[0], SessionAPI.undashedToUUID(info[1]), SSIDField.getText(), Optional.empty(), Optional.empty());
         } catch (Exception e) {

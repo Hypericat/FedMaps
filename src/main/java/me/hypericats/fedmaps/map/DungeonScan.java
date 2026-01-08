@@ -2,22 +2,31 @@ package me.hypericats.fedmaps.map;
 
 import me.hypericats.fedmaps.render.RenderUtils;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.PlayerListEntry;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.FilledMapItem;
+import net.minecraft.item.map.MapDecoration;
+import net.minecraft.item.map.MapDecorationTypes;
+import net.minecraft.item.map.MapState;
+import net.minecraft.network.packet.Packet;
+import net.minecraft.network.packet.s2c.play.GameMessageS2CPacket;
+import net.minecraft.network.packet.s2c.play.MapUpdateS2CPacket;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 
 import java.awt.*;
 import java.util.*;
-import java.util.List;
 
 public class DungeonScan {
     private static final UnitRoom[] orderedRooms = new UnitRoom[36];
+    private static final HashMap<String, DungeonPlayer> dungeonPlayers = new HashMap<>(4);
     private static final HashMap<Long, UnitRoom> unitRooms = new HashMap<>();
     private static UnitRoom currentRoom = null;
     private static int tick = 0;
+    private static boolean dungeonStarted;
+    private static MapInfo mapInfo;
 
 
     private DungeonScan() {
@@ -34,10 +43,16 @@ public class DungeonScan {
         }
     }
 
-    public static void onWorldLoad(ClientWorld world) {
-        // dungeons check
+    public static void onWordLoad() {
         unitRooms.clear();
+        dungeonPlayers.clear();
+        mapInfo = null;
+        dungeonStarted = false;
         currentRoom = null;
+    }
+
+    public static void onPostLocationUpdate() {
+        if (StateManager.getLocation() != Location.Dungeon) return;
 
         for (int x = 0; x < 6; x++) {
             for (int z = 0; z < 6; z++) {
@@ -51,7 +66,42 @@ public class DungeonScan {
                 boolean bl = unit.loadData(x, z);
             }
         }
+    }
 
+    public static Iterable<DungeonPlayer> getDungeonPlayers() {
+        return dungeonPlayers.values();
+    }
+
+    public static void preloadSkins() {
+        if (MinecraftClient.getInstance().getNetworkHandler() == null) return;
+        for (PlayerListEntry p : MinecraftClient.getInstance().getNetworkHandler().getPlayerList()) {
+            if (p.getDisplayName() != null && p.getDisplayName().getString().startsWith("[")) {
+                p.getSkinTextures();
+            }
+        }
+    }
+
+    // Be able to call mid run of rejoin
+    public static void onDungeonStart() {
+        if (MinecraftClient.getInstance().getNetworkHandler() == null) return;
+
+        dungeonPlayers.clear();
+        int icon = 0;
+        for (PlayerListEntry p : MinecraftClient.getInstance().getNetworkHandler().getPlayerList()) {
+            if (p.getDisplayName() == null) continue;
+            String name = p.getDisplayName().getString();
+
+            if (name.startsWith("[")) {
+                name = name.substring(name.indexOf("]") + 2).split(" ")[0];
+                if (name.isEmpty()) continue;
+
+                if (!name.equals(MinecraftClient.getInstance().getSession().getUsername())) {
+                    dungeonPlayers.put(name, new DungeonPlayer(name, icon, p.getSkinTextures()));
+                }
+
+                icon++;
+            }
+        }
     }
 
     public static UnitRoom getRoomFromOrderedIndex(int index) {
@@ -91,14 +141,54 @@ public class DungeonScan {
         return unitRooms.get(encodeIndex(coordToIndexPoint(pos)));
     }
 
+    public static void onReceivePacket(Packet<?> packet) {
+        if (StateManager.getLocation() != Location.Dungeon) return;
+        if (packet instanceof GameMessageS2CPacket messagePacket) {
+            String message = messagePacket.content().getString();
+
+            switch (message) {
+                case "Starting in 4 seconds." -> preloadSkins();
+                case "§e[NPC] §bMort§f: Here, I found this map when I first entered the dungeon." ->  {
+                    onDungeonStart();
+                    dungeonStarted = true;
+                }
+            }
+        }
+
+        if (!(packet instanceof MapUpdateS2CPacket mapPacket) || ((mapPacket.mapId().id() & 1000) != 0) || mapPacket.decorations().isEmpty() || MinecraftClient.getInstance().world == null) return;
+        dungeonStarted = true;
+        if (mapInfo == null) {
+            //MapState mapState = FilledMapItem.getMapState(mapPacket.mapId(), MinecraftClient.getInstance().world);
+            //if (mapState != null)
+            if (mapPacket.updateData().isPresent())
+                mapInfo = new MapInfo(mapPacket.updateData().get().colors());
+        }
+
+        java.util.Iterator<DungeonPlayer> dungeonPlayerIterator = dungeonPlayers.values().iterator();
+        for (MapDecoration deco : mapPacket.decorations().get()) {
+            if (!dungeonPlayerIterator.hasNext()) break;
+            if (deco.type() != MapDecorationTypes.BLUE_MARKER) continue;
+
+            DungeonPlayer player = dungeonPlayerIterator.next();
+            if (player == null) continue;
+            player.updatePosition(deco);
+        }
+    }
+
+    public static MapInfo getMapInfo() {
+        return mapInfo;
+    }
+
     public static void onClientTick() {
+        //System.out.println("Current loc : " + StateManager.getLocation());
+        if (StateManager.getLocation() != Location.Dungeon) return;
         if (MinecraftClient.getInstance().inGameHud != null && currentRoom != null) {
             MinecraftClient.getInstance().inGameHud.setTitle(Text.of(String.valueOf(currentRoom.getCore())));
         }
 
-        // dungeons check
         tick++;
         if ((tick & 0b111) != 0b111) return;
+        if(dungeonStarted && dungeonPlayers.isEmpty()) onDungeonStart(); // If join mid run
 
 
         PlayerEntity player = MinecraftClient.getInstance().player;
@@ -107,20 +197,12 @@ public class DungeonScan {
         currentRoom = getRoomFromPos(player.getBlockPos());
 
         for (int i = 0; i < orderedRooms.length; i++) {
-//            if (orderedRooms[i] == currentRoom) {
-//                int xPos = i / 5;
-//                int yPos = i % 5;
-//                if (currentRoom.hasData())
-//                    MinecraftClient.getInstance().player.sendMessage(Text.of("Current room : " + xPos + ", " + yPos + " -> " + currentRoom.getRoomData().name()), false);
-//                debug(xPos, yPos, Direction2D.NORTH);
-//                debug(xPos, yPos, Direction2D.EAST);
-//                debug(xPos, yPos, Direction2D.SOUTH);
-//                debug(xPos, yPos, Direction2D.WEST);
-//            }
-            if (orderedRooms[i].hasData()) continue;
+            if (orderedRooms[i] == null || orderedRooms[i].hasData()) continue;
             orderedRooms[i].loadData(i / 6, i % 6);
         }
     }
+
+
 
     private static void debug(int xPos, int yPos, Direction2D dir) {
         UnitRoom room = UnitRoom.getOffsetRoomFromIndexPos(xPos, yPos, dir);

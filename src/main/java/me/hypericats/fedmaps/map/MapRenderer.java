@@ -4,13 +4,16 @@ import me.hypericats.fedmaps.render.RenderUtils;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.model.ModelPart;
 import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.entity.player.PlayerModelPart;
+import net.minecraft.entity.player.SkinTextures;
 import net.minecraft.util.Identifier;
 import org.joml.Matrix3x2fStack;
 
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.ConcurrentModificationException;
 import java.util.List;
 
 public class MapRenderer {
@@ -18,9 +21,11 @@ public class MapRenderer {
     private static int mapY = 10;
 
     private static int borderWidth = 1;
-    private static int markerSize = 5;
+    private static int markerSize = 8; // 5
     private static int textSize = 4;
     private static boolean showSecretCount = true;
+    private static boolean renderOtherPlayerHead = true;
+    private static boolean renderPlayerHead = true;
 
     private static int bloodColor = 0xFFFF0000;
     private static int entranceColor = 0xFF148500;
@@ -32,10 +37,13 @@ public class MapRenderer {
     private static int rareColor = 0xFFFFCB59;
     private static int trapColor = 0xFFFF7500;
 
+
     private static final Identifier MAP_MARKER = Identifier.of("fedmaps", "marker.png");
 
 
     public static void onRenderGui(DrawContext context, RenderTickCounter counter) {
+        if (StateManager.getLocation() != Location.Dungeon) return;
+
         RenderUtils.drawOutlinedRectangle(context, mapX, mapY, getMapSize(), getMapSize(), 0xFF000000, borderWidth);
         context.fill(mapX, mapY, mapX + getMapSize(), mapY + getMapSize(), 0x34FFFFFF);
 
@@ -50,7 +58,7 @@ public class MapRenderer {
         for (int x = 0; x < 6; x++) {
             for (int y = 0; y < 6; y++) {
                 UnitRoom room = DungeonScan.getRoomFromOrderedIndex(x, y);
-                if (!room.hasData()) continue;
+                if (room == null || !room.hasData()) continue;
                 int xOffset = ((int) (10.0f * mapX)) + scaledConnectorSize + scaledRoomSize * x + scaledConnectorSize * x;
                 int yOffset = ((int) (10.0f * mapY)) + scaledConnectorSize + scaledRoomSize * y + scaledConnectorSize * y;
 
@@ -69,7 +77,7 @@ public class MapRenderer {
         for (int x = 0; x < 6; x++) {
             for (int y = 0; y < 6; y++) {
                 UnitRoom room = DungeonScan.getRoomFromOrderedIndex(x, y);
-                if (!room.hasData()) continue;
+                if (room == null || !room.hasData()) continue;
                 int xOffset = ((int) (10.0f * mapX)) + scaledConnectorSize + scaledRoomSize * x + scaledConnectorSize * x;
                 int yOffset = ((int) (10.0f * mapY)) + scaledConnectorSize + scaledRoomSize * y + scaledConnectorSize * y;
 
@@ -119,20 +127,44 @@ public class MapRenderer {
             }
         }
 
-        Point start = DungeonScan.getPlayerRelativePosition();
-        if (start != null && MinecraftClient.getInstance().player != null) {
-            int xOffset = (int) ((10.0f * mapX) + (scaledRoomSize) / 2.0f + scaledConnectorSize + ((start.x / 32.0f) * (scaledRoomSize + scaledConnectorSize)));
-            int yOffset = (int) ((10.0f * mapY) + (scaledRoomSize) / 2.0f + scaledConnectorSize + ((start.y / 32.0f) * (scaledRoomSize + scaledConnectorSize)));
-            int scaledMarkerSize = (int) (markerSize / 10.0f * getMapSize());
-            float halfMarker = scaledMarkerSize / 2.0f;
-
-            matrices.pushMatrix();
-            matrices.rotateAbout((float) Math.toRadians(180f + MinecraftClient.getInstance().player.getYaw(counter.getTickProgress(true))), xOffset, yOffset);
-
-            context.drawTexture(RenderPipelines.GUI_TEXTURED, MAP_MARKER, (int) (xOffset - halfMarker), (int) (yOffset - halfMarker), 0, 0, scaledMarkerSize, scaledMarkerSize, scaledMarkerSize, scaledMarkerSize);
-            matrices.popMatrix();
+        try {
+            for (DungeonPlayer player : DungeonScan.getDungeonPlayers()) {
+                int xOffset = (int) ((10.0f * mapX) + scaledConnectorSize + player.getMapX() * (scaledRoomSize));
+                int yOffset = (int) ((10.0f * mapY) + scaledConnectorSize + player.getMapZ() * (scaledRoomSize));
+                renderPlayer(xOffset, yOffset, player.getYaw(), context, matrices, 0xFF0000FF, renderOtherPlayerHead ? player.getTextures() : null, player.isRenderHat());
+            }
+        } catch (ConcurrentModificationException e) {
+            // Happens sometimes when adding them
+            e.printStackTrace();
         }
 
+        Point playerPos = DungeonScan.getPlayerRelativePosition();
+        if (playerPos != null && MinecraftClient.getInstance().player != null) {
+            int xOffset = (int) ((10.0f * mapX) + (scaledRoomSize) / 2.0f + scaledConnectorSize + playerPos.x / 32.0f * (scaledRoomSize + scaledConnectorSize));
+            int yOffset = (int) ((10.0f * mapY) + (scaledRoomSize) / 2.0f + scaledConnectorSize + playerPos.y / 32.0f * (scaledRoomSize + scaledConnectorSize));
+            renderPlayer(xOffset, yOffset, (float) Math.toRadians(180f + MinecraftClient.getInstance().player.getYaw(counter.getTickProgress(true))), context, matrices, 0xFF00FF00, renderPlayerHead ? MinecraftClient.getInstance().player.getSkin() : null, MinecraftClient.getInstance().player.isModelPartVisible(PlayerModelPart.HAT));
+        }
+
+        matrices.popMatrix();
+    }
+
+    private static void renderPlayer(float x, float y, float yaw, DrawContext context, Matrix3x2fStack matrices, int color, SkinTextures skinTextures, boolean hat) {
+        matrices.pushMatrix();
+        matrices.rotateAbout(yaw, x, y);
+
+        int scaledMarkerSize = (int) (markerSize / 10.0f * getMapSize());
+        float halfMarker = scaledMarkerSize / 2.0f;
+
+        if (skinTextures == null) {
+            context.drawTexture(RenderPipelines.GUI_TEXTURED, MAP_MARKER, (int) (x - halfMarker), (int) (y - halfMarker), 0, 0, scaledMarkerSize, scaledMarkerSize, scaledMarkerSize, scaledMarkerSize, color);
+            matrices.popMatrix();
+            return;
+        }
+
+        RenderUtils.drawOutlinedRectangle(context, (int) (x - halfMarker), (int) (y - halfMarker), scaledMarkerSize, scaledMarkerSize, 0xFF000000, 10);
+        context.drawTexture(RenderPipelines.GUI_TEXTURED, skinTextures.body().texturePath(), (int) (x - halfMarker), (int) (y - halfMarker), 8f, 8f, scaledMarkerSize, scaledMarkerSize, 8, 8, 64, 64);
+        if (hat)
+            context.drawTexture(RenderPipelines.GUI_TEXTURED, skinTextures.body().texturePath(), (int) (x - halfMarker), (int) (y - halfMarker), 40f, 8f, scaledMarkerSize, scaledMarkerSize, 8, 8, 64, 64);
         matrices.popMatrix();
     }
 
