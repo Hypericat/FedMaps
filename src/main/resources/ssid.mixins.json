@@ -4,9 +4,11 @@
   "package": "me.hypericats.fedmaps.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "ClientConnectionMixin"
+    "ClientConnectionMixin",
+    "WorldMixin"
   ],
   "client": [
+    "ClientChunkManagerMixin",
     "MinecraftClientMixin",
     "MultiplayerScreenMixin"
   ],

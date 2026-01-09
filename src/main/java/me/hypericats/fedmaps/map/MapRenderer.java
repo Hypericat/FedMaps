@@ -172,7 +172,7 @@ public class MapRenderer {
         if (room.getRoomData() == null) return 0xFF000000;
         switch (room.getRoomData().type()) {
             case NORMAL -> {
-                return normalColor;
+                return DungeonScan.isMimicRoom(room) ? mimicColor : normalColor;
             }
 
             case RARE -> {

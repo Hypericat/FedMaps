@@ -12,11 +12,7 @@ import java.awt.*;
 public class UnitRoom {
     public static final int roomSize = 32;
     public static final int haveRoomSize = roomSize / 2;
-    /**
-     * The starting coordinates to start scanning (the north-west corner).
-     */
-    public static final int startX = -185;
-    public static final int startZ = -185;
+
     private final BlockPos center;
     private RoomData data;
     private int nameHash;

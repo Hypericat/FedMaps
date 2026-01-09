@@ -1,6 +1,10 @@
 package me.hypericats.fedmaps.map;
 
 import me.hypericats.fedmaps.render.RenderUtils;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.TrappedChestBlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.PlayerListEntry;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -11,15 +15,25 @@ import net.minecraft.item.map.MapDecoration;
 import net.minecraft.item.map.MapDecorationTypes;
 import net.minecraft.item.map.MapState;
 import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.s2c.play.GameMessageS2CPacket;
-import net.minecraft.network.packet.s2c.play.MapUpdateS2CPacket;
+import net.minecraft.network.packet.s2c.play.*;
+import net.minecraft.stat.Stat;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.chunk.WorldChunk;
+import org.apache.commons.lang3.concurrent.ConcurrentException;
 
 import java.awt.*;
 import java.util.*;
+import java.util.List;
+import java.util.function.BiConsumer;
 
 public class DungeonScan {
+    /**
+     * The starting coordinates to start scanning (the north-west corner).
+     */
+    public static final int START_X = -185;
+    public static final int START_Z = -185;
+
     private static final UnitRoom[] orderedRooms = new UnitRoom[36];
     private static final HashMap<String, DungeonPlayer> dungeonPlayers = new HashMap<>(4);
     private static final HashMap<Long, UnitRoom> unitRooms = new HashMap<>();
@@ -27,6 +41,9 @@ public class DungeonScan {
     private static int tick = 0;
     private static boolean dungeonStarted;
     private static MapInfo mapInfo;
+    private static BlockPos mimicPos;
+    private static UnitRoom mimicRoom;
+    private static final List<WorldChunk> mimicChunks = new ArrayList<>();
 
 
     private DungeonScan() {
@@ -49,15 +66,50 @@ public class DungeonScan {
         mapInfo = null;
         dungeonStarted = false;
         currentRoom = null;
+        mimicPos = null;
+        mimicChunks.clear();
     }
 
-    public static void onPostLocationUpdate() {
+    public static void onLoadChunk(WorldChunk chunk) {
+        if (mimicPos != null || !isChunkInBounds(chunk)) return;
+
+        if (StateManager.getLocation() == Location.Unknown) {
+            mimicChunks.add(chunk);
+            return;
+        }
+
         if (StateManager.getLocation() != Location.Dungeon) return;
+        if (mimicPos != null) return;
+        mimicPos = checkChunkForMimic(chunk);
+        if (mimicPos != null) {
+            mimicRoom = getRoomFromPos(mimicPos);
+            System.out.println("Found mimic in chunk at : " + mimicPos);
+        }
+    }
+
+    private static boolean isChunkInBounds(WorldChunk chunk) {
+        int x = chunk.getPos().x;
+        int z = chunk.getPos().z;
+        return x <= -1 && x >= -13 && z <= -1 && z >= -13;
+    }
+
+
+    private static BlockPos checkChunkForMimic(WorldChunk chunk) {
+        // Slime has a trapped chest at Y 82
+        return chunk.getBlockEntities().values().stream().filter(blockEntity -> blockEntity instanceof TrappedChestBlockEntity && blockEntity.getPos().getY() != 82).findAny().map(BlockEntity::getPos).orElse(null);
+    }
+
+
+    public static void onPostLocationUpdate() {
+        if (StateManager.getLocation() != Location.Dungeon) {
+            mimicChunks.clear();
+            return;
+        }
 
         for (int x = 0; x < 6; x++) {
             for (int z = 0; z < 6; z++) {
-                int xPos = UnitRoom.startX + x * UnitRoom.roomSize;
-                int zPos = UnitRoom.startZ + z * UnitRoom.roomSize;
+                int xPos = START_X + x * UnitRoom.roomSize;
+                int zPos = START_Z + z * UnitRoom.roomSize;
 
                 UnitRoom unit = new UnitRoom(new BlockPos(xPos, 70, zPos));
 
@@ -66,6 +118,25 @@ public class DungeonScan {
                 boolean bl = unit.loadData(x, z);
             }
         }
+
+        for (WorldChunk chunk : mimicChunks) {
+            mimicPos = checkChunkForMimic(chunk);
+            if (mimicPos != null) {
+                mimicRoom = getRoomFromPos(mimicPos);
+                System.out.println("Found mimic in chunk at : " + mimicPos);
+                break;
+            }
+        }
+    }
+
+    public static boolean isMimicRoom(UnitRoom r) {
+        if (mimicRoom == null) return false;
+        if (!r.hasData() || !mimicRoom.hasData()) return r == mimicRoom;
+        return r.getRoomData() == mimicRoom.getRoomData();
+    }
+
+    public static UnitRoom getMimicRoom() {
+        return mimicRoom;
     }
 
     public static Iterable<DungeonPlayer> getDungeonPlayers() {
@@ -125,12 +196,12 @@ public class DungeonScan {
     public static Point getPlayerRelativePosition() {
         if (MinecraftClient.getInstance().player == null) return null;
         BlockPos playerPos = MinecraftClient.getInstance().player.getBlockPos();
-        return new Point(playerPos.getX() - UnitRoom.startX, playerPos.getZ() - UnitRoom.startZ);
+        return new Point(playerPos.getX() - START_X, playerPos.getZ() - START_Z);
     }
 
 
     public static Point coordToIndexPoint(BlockPos pos) {
-        return new Point(Math.round((pos.getX() - UnitRoom.startX) / (float) UnitRoom.roomSize), Math.round((pos.getZ() - UnitRoom.startZ) / (float) UnitRoom.roomSize)); // Doesnt work, maybe because it always rounds down?
+        return new Point(Math.round((pos.getX() - START_X) / (float) UnitRoom.roomSize), Math.round((pos.getZ() - START_Z) / (float) UnitRoom.roomSize)); // Doesnt work, maybe because it always rounds down?
     }
 
     public static Iterator<UnitRoom> iterateRooms() {
@@ -141,8 +212,28 @@ public class DungeonScan {
         return unitRooms.get(encodeIndex(coordToIndexPoint(pos)));
     }
 
+    public static BlockPos getMimicPos() {
+        return mimicPos;
+    }
+
     public static void onReceivePacket(Packet<?> packet) {
         if (StateManager.getLocation() != Location.Dungeon) return;
+
+        if (mimicPos == null && packet instanceof BlockUpdateS2CPacket blockUpdateS2CPacket && blockUpdateS2CPacket.getState().getBlock() == Blocks.TRAPPED_CHEST) {
+            mimicPos = blockUpdateS2CPacket.getPos();
+            mimicRoom = getRoomFromPos(mimicPos);
+            return;
+        }
+
+        if (mimicPos == null && packet instanceof ChunkDeltaUpdateS2CPacket blockSectionPacket) {
+            blockSectionPacket.visitUpdates((blockPos, blockState) -> {
+                if (mimicPos != null || blockState.getBlock() != Blocks.TRAPPED_CHEST) return;
+                mimicPos = blockPos;
+                mimicRoom = getRoomFromPos(mimicPos);
+            });
+            return;
+        }
+
         if (packet instanceof GameMessageS2CPacket messagePacket) {
             String message = messagePacket.content().getString();
 
@@ -153,6 +244,7 @@ public class DungeonScan {
                     dungeonStarted = true;
                 }
             }
+            return;
         }
 
         if (!(packet instanceof MapUpdateS2CPacket mapPacket) || ((mapPacket.mapId().id() & 1000) != 0) || mapPacket.decorations().isEmpty() || MinecraftClient.getInstance().world == null) return;
