@@ -1,5 +1,7 @@
 package me.hypericats.fedmaps.feature;
 
+import me.hypericats.fedmaps.config.SettingHandler;
+import me.hypericats.fedmaps.config.settings.MapSetting;
 import me.hypericats.fedmaps.map.Location;
 import me.hypericats.fedmaps.map.StateManager;
 import me.hypericats.fedmaps.render.RenderUtils;
@@ -86,6 +88,7 @@ public class Esp extends Feature {
     }
 
     public void onRenderWorld(MatrixStack matrices, VertexConsumerProvider vertices, float partialTicks) {
+        if (!SettingHandler.fromName("esp", MapSetting.class).getValue()) return;
         if (!drawBoxes || StateManager.getLocation() != Location.Dungeon) return; // || !inDungeons
 
         if (showStarredMobs && !starredMobs.isEmpty()) { // && !BossEventDispatcher.inBoss
@@ -153,6 +156,7 @@ public class Esp extends Feature {
     }
 
     public void onClientTick() {
+        if (!SettingHandler.fromName("esp", MapSetting.class).getValue()) return;
         if (MinecraftClient.getInstance().world == null || MinecraftClient.getInstance().player == null || StateManager.getLocation() != Location.Dungeon) return;
         tick++;
         if (tick % updateInterval != 0) return;

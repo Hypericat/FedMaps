@@ -1,19 +1,19 @@
 package me.hypericats.fedmaps.config.settings;
 
 import com.mojang.brigadier.arguments.ArgumentType;
-import com.mojang.brigadier.arguments.FloatArgumentType;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import me.hypericats.fedmaps.config.Setting;
 
-public class Test implements Setting {
-    private float value;
+public class MapSetting implements Setting {
+    private boolean value;
     @Override
     public String getName() {
-        return "test";
+        return "map";
     }
 
     @Override
     public ArgumentType<?> getArgument() {
-        return FloatArgumentType.floatArg();
+        return BoolArgumentType.bool();
     }
 
     @Override
@@ -21,8 +21,12 @@ public class Test implements Setting {
         return String.valueOf(value);
     }
 
+    public boolean getValue() {
+        return this.value;
+    }
+
     @Override
     public void setFromObject(Object value) {
-        this.value = (float) value;
+        this.value = (boolean) value;
     }
 }

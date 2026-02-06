@@ -16,6 +16,7 @@ import net.minecraft.item.map.MapDecorationTypes;
 import net.minecraft.item.map.MapState;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.*;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.stat.Stat;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
@@ -274,9 +275,9 @@ public class DungeonScan {
     public static void onClientTick() {
         //System.out.println("Current loc : " + StateManager.getLocation());
         if (StateManager.getLocation() != Location.Dungeon) return;
-        if (MinecraftClient.getInstance().inGameHud != null && currentRoom != null) {
-            MinecraftClient.getInstance().inGameHud.setTitle(Text.of(String.valueOf(currentRoom.getCore())));
-        }
+//        if (MinecraftClient.getInstance().inGameHud != null && currentRoom != null) {
+//            MinecraftClient.getInstance().inGameHud.setTitle(Text.of(String.valueOf(currentRoom.getCore())));
+//        }
 
         tick++;
         if ((tick & 0b111) != 0b111) return;

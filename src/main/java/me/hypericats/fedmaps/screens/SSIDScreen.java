@@ -78,11 +78,12 @@ public class SSIDScreen extends Screen {
             feedBackColor = 0xFF8f0000;
             return;
         }
+        String ssidText = SSIDField.getText().trim();
         String[] info = null;
 
         for (int i = 0; i < 10; i++) {
             try {
-                info = SessionAPI.getProfileInfo(SSIDField.getText());
+                info = SessionAPI.getProfileInfo(ssidText);
                 break;
             } catch (MalformedJsonException | JsonSyntaxException json) {
                 feedBackMessage = "Ran out of retries, network error!";
@@ -106,7 +107,7 @@ public class SSIDScreen extends Screen {
         if (info == null) return;
 
         try {
-            session = new Session(info[0], SessionAPI.undashedToUUID(info[1]), SSIDField.getText(), Optional.empty(), Optional.empty());
+            session = new Session(info[0], SessionAPI.undashedToUUID(info[1]), ssidText, Optional.empty(), Optional.empty());
         } catch (Exception e) {
             feedBackMessage = "Failed to parse UUID from string!";
             feedBackColor = 0xFF8f0000;

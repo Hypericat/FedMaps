@@ -1,5 +1,7 @@
 package me.hypericats.fedmaps.map;
 
+import me.hypericats.fedmaps.config.SettingHandler;
+import me.hypericats.fedmaps.config.settings.MapSetting;
 import me.hypericats.fedmaps.render.RenderUtils;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.RenderPipelines;
@@ -43,6 +45,7 @@ public class MapRenderer {
 
     public static void onRenderGui(DrawContext context, RenderTickCounter counter) {
         if (StateManager.getLocation() != Location.Dungeon) return;
+        if (!SettingHandler.fromName("esp", MapSetting.class).getValue()) return;
 
         RenderUtils.drawOutlinedRectangle(context, mapX, mapY, getMapSize(), getMapSize(), 0xFF000000, borderWidth);
         context.fill(mapX, mapY, mapX + getMapSize(), mapY + getMapSize(), 0x34FFFFFF);

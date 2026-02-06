@@ -25,7 +25,7 @@ public class SettingArgument implements ArgumentType<Setting> {
 
     public Setting parse(StringReader stringReader) throws CommandSyntaxException {
         String string = stringReader.readUnquotedString();
-        Setting feature = SettingHandler.fromName(string);
+        Setting feature = SettingHandler.fromName(string, Setting.class);
         if (feature == null) {
             throw INVALID_FEATURE.createWithContext(stringReader, string);
         } else {
